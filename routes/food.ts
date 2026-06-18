@@ -7,68 +7,73 @@ const router = Router()
 
 //get searched food
 router.get('/food/search', async (req: Request, res: Response) => {
-    const searched = req.query.searched as string
-    const { data, error } = await supabase
-        .from('food')
-        .select('*')
-        .ilike('name', `%${searched}%`)
-    
-    if (error) {
-        res.status(500).json({error: error.message})
+    const searched = req.query.searched as {searched: string}
+    const result = await prisma.food.findFirst({
+        where: {
+            name: searched.searched
+        }
+    })
+
+    if (!result) {
+        res.status(404).json({error: 'Food not found'})
     } else {
-        res.status(200).json({data: data})
+        res.status(200).json({data: result})
     }
+})
 
 //get food by id
 router.get('/food/:id', async(req: Request, res: Response) => {
-    const { id } = req.params
-    const { data, error } = await supabase
-        .from ('food')
-        .select('*')
-        .eq ('food_id', id)
-        .single()
-    
-    if (error) {
-        res.status(500).json({error: error.message})
+    const { id } = req.params as { id: string }
+    const result = await prisma.food.findUnique({
+        where: 
+            {food_id: id}
+    })
+
+    if (!result) {
+        res.status(404).json({error: 'Food not found'})
     } else {
-        res.status(200).json({data: data})
+        res.status(200).json({data: result})
     }
 })
 
 //create a custom food
 router.post('/food', async(req: Request, res: Response) => {
     const { name, calories, carbs, protein, fat } = req.body
-    const { data, error } = await supabase
-        .from('food')
-        .insert({ name, calories, carbs, protein, fat })
-        .select()
-        .single()
-    
-    if (error) {
-        res.status(500).json({error: error.message})
+    const result = await prisma.food.create({
+        data: {
+            name: name,
+            calories: calories,
+            carbs: carbs,
+            protein: protein,
+            fat: fat
+        }
+    })
+    if (!result) {
+        res.status(500).json({error: 'Failed to create food'})
     } else {
-        res.status(201).json({message: 'Food created successfully', data: data})
+        res.status(201).json({message: 'Food created successfully', data: result})
     }
-})
+
 
 //update a custom food
-router.put('food/:id', async(req: Request, res: Response) => {
-    const { id } = req.params
+router.put('/food/:id', async(req: Request, res: Response) => {
+    const { id } = req.params as { id: string }
     const { name, calories, carbs, protein, fat } = req.body
-    const { data, error } = await supabase
-        .from('food')
-        .update({ name, calories, carbs, protein, fat })
-        .eq('food_id', id)
-        .select()
-        .single()
-
-    if (error) {
-        res.status(500).json({error: error.message})
+    const result = await prisma.food.update({
+        where: {food_id: id},
+        data: {
+            name: name,
+            calories: calories,
+            carbs: carbs,
+            protein: protein,
+            fat: fat
+        }
+    })
+    if (!result) {
+        res.status(500).json({error: 'Failed to update food'})
     } else {
-        res.status(200).json({message: 'Food updated successfully', data: data})
+        res.status(200).json({message: 'Food updated successfully', data: result})
     }
+    })
 })
-
-
-
-})
+export default router

@@ -8,41 +8,32 @@ import { supabase } from '../db.ts'
 
 export type CreateUserDto  = {
     name: string,
+    birthday: string,    
     email: string,
-    birthday: string,
     number: string,
-    calorie_goal: number,
-    protein_goal: number,
-    carb_goal: number,
-    fat_goal: number,
+    username: string,    
     password: string,
-    username: string,
     is_deleted: boolean
 
 }
 //create a new user
 router.post('/users', async (req : Request, res : Response) => {
     const body : CreateUserDto = req.body
-    const { data, error } = await supabase
-        .from('users')
-        .insert({
-        name: body.name,
-        email: body.email,
-        birthday: body.birthday,
-        number: body.number,
-        calorie_goal: body.calorie_goal,
-        protein_goal: body.protein_goal,
-        carb_goal: body.carb_goal,
-        fat_goal: body.fat_goal,
-        password: body.password,
-        username: body.username,
-        is_deleted: body.is_deleted
-    }).select()
+    const result = await prisma.users.create({
+        data: {
+            name: body.name,
+            birthday: new Date(body.birthday),
+            email: body.email,
+            number: body.number,
+            password: body.password, 
+            username: body.username
+        } 
+    })
 
-    if (error) {
-        res.status(500).json({error: error.message})
+    if (!result) {
+        res.status(500).json({error: 'Failed to create user'})
     } else {
-        res.status(201).json({message: 'User created successfully', data: data})
+        res.status(201).json({message: 'User created successfully', data: result})
     }
 })
 
@@ -64,44 +55,53 @@ router.get('/users/:id', async (req: Request, res: Response) => {
         res.status(200).json({data: result})
     }
 })
-const temp = prisma.goals.findMany()
+
 //update user by id
 router.put('/users/:id', async (req: Request, res: Response) => {
-    const { id } = req.params 
-    const body : CreateUserDto = req.body
-    const { data, error } = await supabase
-        .from('users')
-        .update({
-            name: body.name, 
-            email: body.email,
-            birthday: body.birthday,
-            number: body.number,
-            calorie_goal: body.calorie_goal,
-            protein_goal: body.protein_goal,
-            carb_goal: body.carb_goal,
-            fat_goal: body.fat_goal,
-            password: body.password,
-            username: body.username,
-            is_deleted: body.is_deleted
+    if (!req.params.id) {
+        res.status(400).json({error: 'User ID is required'})
+        return
+    }
+        const { id } = req.params as { id: string }
+        const body : CreateUserDto = req.body
+        const result = await prisma.users.update({
+            where: {user_id: id},
+            data: {
+                name: body.name,
+                email: body.email,
+                birthday: new Date(body.birthday),
+                number: body.number,
+                username: body.username,
+                password: body.password,
+            }
         })
-        .eq('user_id', id)
-        .select()
-
-        if (error) {
-            res.status(500).json({error: error.message})
+    
+        if (!result) {
+            res.status(500).json({error: 'Failed to update user'})
         } else {
-            res.status(200).json({message: 'User updated successfully', data: data})
+            res.status(200).json({message: 'User updated successfully', data: result})
         }
-        })
+    })
 
 //soft delete user by id
 router.delete('/users/:id', async (req: Request, res: Response) => {
-    const { id } = req.params
-    const { data, error } = await supabase
-        .from ('users')
-        .update({is_deleted: true})
-        .eq('user_id', id)
-        .select()
+    if (!req.params.id) {
+        res.status(400).json({error: 'User ID is required'})
+        return
+    }
+    const { id } = req.params as {id: string}
+    const result = await prisma.users.update({
+        where: { user_id: id },
+        data: {
+            is_deleted: true
+        }
+    })
+
+    if (!result) {
+        res.status(500).json({error: 'Failed to delete user'})
+    } else {
+        res.status(200).json({message: 'User deleted successfully', data: result})
+    }
 })
 
 export default router
