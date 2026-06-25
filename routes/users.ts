@@ -1,6 +1,8 @@
 import express, { type Request, type Response } from 'express'
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.ts';
+import * as bcrypt from 'bcrypt'
+
 
 const router = Router()
 import { supabase } from '../db.ts'
@@ -25,7 +27,7 @@ router.post('/users', async (req : Request, res : Response) => {
             birthday: new Date(body.birthday),
             email: body.email,
             number: body.number,
-            password: body.password, 
+            password: await bcrypt.hash(body.password, 10), 
             username: body.username
         } 
     })
@@ -46,7 +48,7 @@ router.get('/users/:id', async (req: Request, res: Response) => {
     }
     const result = await prisma.users.findUnique({
         where: {
-            user_id: id
+            id: id
         }
     })
     if (!result) {
@@ -65,7 +67,7 @@ router.put('/users/:id', async (req: Request, res: Response) => {
         const { id } = req.params as { id: string }
         const body : CreateUserDto = req.body
         const result = await prisma.users.update({
-            where: {user_id: id},
+            where: {id: id},
             data: {
                 name: body.name,
                 email: body.email,
@@ -91,7 +93,7 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
     }
     const { id } = req.params as {id: string}
     const result = await prisma.users.update({
-        where: { user_id: id },
+        where: { id: id },
         data: {
             is_deleted: true
         }

@@ -36,3 +36,4 @@ router.get('/diary', async (req: Request, res: Response) => {
 
 })
 
+export default router

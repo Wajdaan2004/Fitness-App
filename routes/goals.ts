@@ -14,13 +14,17 @@ router.get('/goals/:userId/:date', async (req: Request, res: Response) => {    c
             date: 'desc'
         }
     })
-})
+    if (!result) {
+        res.status(404).json({error: 'Goals not found'})
+        } else {
+            res.status(200).json({message: 'Goals found', data: result})
+        }
+    })
 
 //create or update goals
 router.post('/goals', async (req: Request, res: Response) => {
     const { user_id, calorie_goal, fat_goal, carb_goal, protein_goal } = req.body
     const result = await prisma.goals.create({
-        where: {user_id: String(user_id)},
         data: {
             user_id: String(user_id),
             calorie_goal: calorie_goal ? new Prisma.Decimal(calorie_goal) : null,
@@ -29,3 +33,11 @@ router.post('/goals', async (req: Request, res: Response) => {
             protein_goal: protein_goal ? new Prisma.Decimal(protein_goal) : null
         }
     })
+        if (!result) {
+        res.status(500).json({error: 'Failed to create goals'})
+    } else {
+        res.status(201).json({message: 'Goals created successfully', data: result})
+    }   
+})
+
+export default router

@@ -36,3 +36,40 @@ router.post('/food-entry', async(req: Request, res: Response) => {
         res.status(201).json({message: 'Food entry created', data: result})
     }
 })
+
+//delete food entry
+router.delete('/food-entry/:id', async(req: Request, res: Response) => {
+    const { id } = req.params
+    const result = await prisma.food_entry.delete({
+        where: {
+            id: String(id)
+        }
+    })
+    if (!result) {
+        res.status(404).json({error: 'Food entry not found'})
+    } else {
+        res.status(200).json({message: 'Food entry deleted', data: result})
+    }
+})
+
+//update food entry
+router.put('/food-entry/:id', async(req: Request, res: Response) => {
+    const { id } = req.params
+    const { diary_id, food_id, serving_amount, serving_unit } = req.body
+    const result = await prisma.food_entry.update({
+        where: {
+            id: String(id)
+        },
+        data: {
+            serving_amount: new Prisma.Decimal(serving_amount),
+            serving_unit: String(serving_unit),
+        }
+    })
+    if (!result) {
+        res.status(404).json({error: 'Food entry not found'})
+    } else {
+        res.status(200).json({message: 'Food entry updated', data: result})
+    }
+})
+
+export default router

@@ -26,7 +26,7 @@ router.get('/food/:id', async(req: Request, res: Response) => {
     const { id } = req.params as { id: string }
     const result = await prisma.food.findUnique({
         where: 
-            {food_id: id}
+            {id: id}
     })
 
     if (!result) {
@@ -60,7 +60,7 @@ router.put('/food/:id', async(req: Request, res: Response) => {
     const { id } = req.params as { id: string }
     const { name, calories, carbs, protein, fat } = req.body
     const result = await prisma.food.update({
-        where: {food_id: id},
+        where: {id: id},
         data: {
             name: name,
             calories: calories,
