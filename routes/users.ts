@@ -8,19 +8,25 @@ const router = Router()
 import { supabase } from '../db.ts'
 //import { randomUUID } from 'node:crypto'
 
-export type CreateUserDto  = {
-    name: string,
-    birthday: string,    
-    email: string,
-    number: string,
-    username: string,    
-    password: string,
-    is_deleted: boolean
+//get user by email and password
+router.get('/users/login', async (req: Request, res: Response) => {
+    const { email, password } = req.body
+    const result = await prisma.users.findUnique({
+        where: {
+            email: email,
+            password: String(bcrypt.hash(password, 10))
+        }
+    })
+    if (!result) {
+        res.status(404).json({error: 'User not found'})
+    } else {
+        res.status(200).json({data: result})
+    }
+})
 
-}
-//create a new user
-router.post('/users', async (req : Request, res : Response) => {
-    const body : CreateUserDto = req.body
+//sign up 
+router.post('/users/signup', async (req : Request, res : Response) => {
+    const body = req.body
     const result = await prisma.users.create({
         data: {
             name: body.name,
@@ -65,7 +71,7 @@ router.put('/users/:id', async (req: Request, res: Response) => {
         return
     }
         const { id } = req.params as { id: string }
-        const body : CreateUserDto = req.body
+        const body = req.body
         const result = await prisma.users.update({
             where: {id: id},
             data: {
