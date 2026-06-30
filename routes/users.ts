@@ -8,19 +8,29 @@ const router = Router()
 import { supabase } from '../db.ts'
 //import { randomUUID } from 'node:crypto'
 
-//get user by email and password
+//login
 router.get('/users/login', async (req: Request, res: Response) => {
     const { email, password } = req.body
-    const result = await prisma.users.findUnique({
+    const user = await prisma.users.findFirst({
         where: {
-            email: email,
-            password: String(bcrypt.hash(password, 10))
+            email: email
         }
     })
-    if (!result) {
+
+    if (!user) {
         res.status(404).json({error: 'User not found'})
-    } else {
-        res.status(200).json({data: result})
+        return
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password, function(err, result) {
+        if (err) {
+            res.status(500).json({error: 'Failed to compare passwords'})
+            return false
+        } 
+
+        if (result) {
+            res.status(200).json({message: 'Login successful', data: user})
+        }
     }
 })
 

@@ -10,7 +10,7 @@ model users {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name       String
   birthday   DateTime  @db.Date
-  email      String?   @unique
+  email      String    @unique
   number     String?   @db.VarChar(20) 
   username   String    @db.VarChar(30)  
   password   String    @db.VarChar(20)
