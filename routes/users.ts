@@ -16,21 +16,16 @@ router.get('/users/login', async (req: Request, res: Response) => {
             email: email
         }
     })
-
     if (!user) {
-        res.status(404).json({error: 'User not found'})
+        res.status(404).json({error: 'Invalid email or password'})
         return
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password, function(err, result) {
-        if (err) {
-            res.status(500).json({error: 'Failed to compare passwords'})
-            return false
-        } 
-
-        if (result) {
-            res.status(200).json({message: 'Login successful', data: user})
-        }
+    const passwordMatch = await bcrypt.compare(password, user.password) 
+    if (passwordMatch) {
+        res.status(200).json({message: 'Login successful', data: user})
+    } else {
+        res.status(401).json({error: 'Invalid email or password'})
     }
 })
 
