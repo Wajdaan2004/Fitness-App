@@ -13,7 +13,7 @@ model users {
   email      String    @unique
   number     String?   @db.VarChar(20) 
   username   String    @db.VarChar(30)  
-  password   String    @db.VarChar(20)
+  password   String    @db.VarChar(60)
   is_deleted Boolean   @default(false)
   diary      diary[]
   workout    workout[]

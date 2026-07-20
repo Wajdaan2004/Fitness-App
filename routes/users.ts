@@ -32,17 +32,31 @@ router.get('/users/login', async (req: Request, res: Response) => {
 //sign up 
 router.post('/users/signup', async (req : Request, res : Response) => {
     const body = req.body
+    //check if user already exists
+    const userExists = await prisma.users.findUnique({
+        where: {email: body.email}
+    })
+    if (userExists){
+        return res.status(400).json({error: 'User already exists'})
+    }
+
+    //hash password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(body.password, salt)
+
+    //create user
     const result = await prisma.users.create({
         data: {
             name: body.name,
-            birthday: new Date(body.birthday),
+            username: body.username,
+            password: hashedPassword,
             email: body.email,
             number: body.number,
-            password: await bcrypt.hash(body.password, 10), 
-            username: body.username
+            birthday: new Date(body.birthday)
         } 
     })
 
+    //check if user was created successfully
     if (!result) {
         res.status(500).json({error: 'Failed to create user'})
     } else {
@@ -85,7 +99,7 @@ router.put('/users/:id', async (req: Request, res: Response) => {
                 birthday: new Date(body.birthday),
                 number: body.number,
                 username: body.username,
-                password: body.password,
+                password: await bcrypt.hash(body.password, 10),
             }
         })
     
