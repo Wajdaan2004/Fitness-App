@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express'
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.ts';
 import * as bcrypt from 'bcrypt'
+import { generateToken } from '../utils/generateToken.ts'
 
 
 const router = Router()
@@ -10,7 +11,8 @@ import { supabase } from '../db.ts'
 
 //login
 router.get('/users/login', async (req: Request, res: Response) => {
-    const { email, password } = req.body
+    const { email, password, userId } = req.body
+    const token = generateToken(userId, res)
     const user = await prisma.users.findFirst({
         where: {
             email: email
@@ -23,18 +25,19 @@ router.get('/users/login', async (req: Request, res: Response) => {
 
     const passwordMatch = await bcrypt.compare(password, user.password) 
     if (passwordMatch) {
-        res.status(200).json({message: 'Login successful', data: user})
+        res.status(200).json({message: 'Login successful', data: user, token: token})
     } else {
         res.status(401).json({error: 'Invalid email or password'})
     }
 })
 
-//sign up 
+//Register 
 router.post('/users/signup', async (req : Request, res : Response) => {
-    const body = req.body
+    const { userId, email, password, name, username, number, birthday } = req.body
+    const token = generateToken(userId, res)
     //check if user already exists
     const userExists = await prisma.users.findUnique({
-        where: {email: body.email}
+        where: {email: email}
     })
     if (userExists){
         return res.status(400).json({error: 'User already exists'})
@@ -42,17 +45,17 @@ router.post('/users/signup', async (req : Request, res : Response) => {
 
     //hash password
     const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(body.password, salt)
+    const hashedPassword = await bcrypt.hash(password, salt)
 
     //create user
     const result = await prisma.users.create({
         data: {
-            name: body.name,
-            username: body.username,
+            name: name,
+            username: username,
             password: hashedPassword,
-            email: body.email,
-            number: body.number,
-            birthday: new Date(body.birthday)
+            email: email,
+            number: number,
+            birthday: new Date(birthday)
         } 
     })
 
@@ -60,7 +63,7 @@ router.post('/users/signup', async (req : Request, res : Response) => {
     if (!result) {
         res.status(500).json({error: 'Failed to create user'})
     } else {
-        res.status(201).json({message: 'User created successfully', data: result})
+        res.status(201).json({message: 'User created successfully', data: result, token: token})
     }
 })
 
@@ -129,6 +132,12 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
     } else {
         res.status(200).json({message: 'User deleted successfully', data: result})
     }
+})
+
+//logout
+router.post('/users/logout', async (req: Request, res: Response) => {
+    res.clearCookie('jwt')
+    res.status(200).json({message: 'Logout successful'})
 })
 
 export default router
