@@ -1,5 +1,5 @@
 import { type Request, type Response, Router } from 'express'
-import { supabase } from '../db.js'
+import { supabase } from '../db.ts'
 import { prisma } from '../lib/prisma.ts';
 
 const router = Router()

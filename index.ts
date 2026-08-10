@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { config } from 'dotenv'
 import express from 'express'
-import userRoutes from './routes/users.ts'
+import userRoutes from './Server/routes/users.ts'
 const app = express()
 
 app.use(express.json())
