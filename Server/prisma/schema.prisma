@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model users {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  birthday   DateTime  @db.Date
+  email      String    @unique
+  number     String?   @db.VarChar(20) 
+  username   String    @db.VarChar(30)  
+  password   String    @db.VarChar(60)
+  is_deleted Boolean   @default(false)
+  diary      diary[]
+  workout    workout[]
+  goals      goals[]
+}
+
+model goals {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String   @db.Uuid
+  date         DateTime @default(now()) @db.Date
+  calorie_goal Decimal? @db.Decimal(7, 2)
+  fat_goal     Decimal? @db.Decimal(6, 2)
+  carb_goal    Decimal? @db.Decimal(6, 2)
+  protein_goal Decimal? @db.Decimal(6, 2)
+  users        users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model diary {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String       @db.Uuid
+  date       DateTime     @db.Date
+  food_entry food_entry[]
+  users      users        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([user_id, date])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model food_entry {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  diary_id       String  @db.Uuid
+  food_id        String  @db.Uuid
+  serving_amount Decimal @db.Decimal(5, 2)
+  serving_unit   String  @db.VarChar(20)
+  diary          diary   @relation(fields: [diary_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  food           food    @relation(fields: [food_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model food {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  calories       Int          @db.SmallInt
+  protein        Int          @db.SmallInt
+  carbs          Int          @db.SmallInt
+  fat            Int          @db.SmallInt
+  micronutrients Json?        @db.JsonB
+  food_entry     food_entry[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model workout {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String              @db.Uuid
+  date              DateTime            @default(now()) @db.Date
+  users             users               @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workout_exercises workout_exercises[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model workout_exercises {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workout_id  String    @db.Uuid
+  exercise_id String    @db.Uuid
+  sets        sets[]
+  exercises   exercises @relation(fields: [exercise_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workout     workout   @relation(fields: [workout_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model exercises {
+  id       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  primary_muscle    String
+  secondary_muscle  String[]
+  workout_exercises workout_exercises[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sets {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workout_exercise_id String             @db.Uuid
+  set_number          Int
+  reps                Int
+  weight              Decimal            @db.Decimal(6, 2)
+  workout_exercises   workout_exercises? @relation(fields: [workout_exercise_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
