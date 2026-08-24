@@ -1,8 +1,10 @@
-import express, { type Request, type Response } from 'express'
+import { type Request, type Response } from 'express'
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.ts';
 import * as bcrypt from 'bcrypt'
 import { generateToken } from '../utils/generateToken.ts'
+import jwt from 'jsonwebtoken'
+import { authMiddleware } from '../middlewares/authMiddleware.ts'
 
 
 const router = Router()
@@ -11,8 +13,7 @@ import { supabase } from '../db.ts'
 
 //login
 router.get('/users/login', async (req: Request, res: Response) => {
-    const { email, password, userId } = req.body
-    const token = generateToken(userId, res)
+    const { email, password } = req.body
     const user = await prisma.users.findFirst({
         where: {
             email: email
@@ -25,6 +26,7 @@ router.get('/users/login', async (req: Request, res: Response) => {
 
     const passwordMatch = await bcrypt.compare(password, user.password) 
     if (passwordMatch) {
+        const token = generateToken(user.id, res)
         res.status(200).json({message: 'Login successful', data: user, token: token})
     } else {
         res.status(401).json({error: 'Invalid email or password'})
@@ -34,7 +36,6 @@ router.get('/users/login', async (req: Request, res: Response) => {
 //Register 
 router.post('/users/signup', async (req : Request, res : Response) => {
     const { userId, email, password, name, username, number, birthday } = req.body
-    const token = generateToken(userId, res)
     //check if user already exists
     const userExists = await prisma.users.findUnique({
         where: {email: email}
@@ -56,8 +57,12 @@ router.post('/users/signup', async (req : Request, res : Response) => {
             email: email,
             number: number,
             birthday: new Date(birthday)
-        } 
+        }, 
+
     })
+
+    //generate token 
+    const token = generateToken(userId, res)
 
     //check if user was created successfully
     if (!result) {
@@ -68,7 +73,7 @@ router.post('/users/signup', async (req : Request, res : Response) => {
 })
 
 //get user by id
-router.get('/users/:id', async (req: Request, res: Response) => {
+router.get('/users/:id', authMiddleware,  async (req: Request, res: Response) => {
     const { id } = req.params as { id: string }
     if (!id) {
         res.status(400).json({error: 'User ID is required'})
