@@ -3,40 +3,39 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma.ts';
 import * as bcrypt from 'bcrypt'
 import { generateToken } from '../utils/generateToken.ts'
-import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middlewares/authMiddleware.ts'
 
 
 const router = Router()
 import { supabase } from '../db.ts'
+import type { extRequest } from '../../definitions.ts';
 //import { randomUUID } from 'node:crypto'
 
 //login
 router.get('/users/login', async (req: Request, res: Response) => {
     const { email, password } = req.body
-    const user = await prisma.users.findFirst({
+    try {
+    const user = await prisma.users.findUnique({
         where: {
             email: email
         }
     })
     if (!user) {
-        res.status(404).json({error: 'Invalid email or password'})
-        return
+        return res.status(404).json({error: 'User not found'})
     }
-
     const passwordMatch = await bcrypt.compare(password, user.password) 
     if (passwordMatch) {
         const token = generateToken(user.id, res)
         res.status(200).json({message: 'Login successful', data: user, token: token})
-    } else {
-        res.status(401).json({error: 'Invalid email or password'})
+    } 
+    } catch (error) {
+        res.status(500).json({error: 'Failed to login', details: error})
     }
 })
 
 //Register 
-router.post('/users/signup', async (req : Request, res : Response) => {
+router.post('/users/register', async (req : Request, res : Response) => {
     const { userId, email, password, name, username, number, birthday } = req.body
-    //check if user already exists
     const userExists = await prisma.users.findUnique({
         where: {email: email}
     })
@@ -44,11 +43,8 @@ router.post('/users/signup', async (req : Request, res : Response) => {
         return res.status(400).json({error: 'User already exists'})
     }
 
-    //hash password
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, salt)
-
-    //create user
     const result = await prisma.users.create({
         data: {
             name: name,
@@ -60,28 +56,22 @@ router.post('/users/signup', async (req : Request, res : Response) => {
         }, 
 
     })
-
-    //generate token 
     const token = generateToken(userId, res)
+    const { password: _, ...safeUser } = result
 
-    //check if user was created successfully
     if (!result) {
         res.status(500).json({error: 'Failed to create user'})
     } else {
-        res.status(201).json({message: 'User created successfully', data: result, token: token})
+        res.status(201).json({message: 'User created successfully', data: safeUser, token: token})
     }
 })
 
 //get user by id
-router.get('/users/:id', authMiddleware,  async (req: Request, res: Response) => {
-    const { id } = req.params as { id: string }
-    if (!id) {
-        res.status(400).json({error: 'User ID is required'})
-        return
-    }
+router.get('/users/:id', authMiddleware,  async (req: extRequest, res: Response) => {
+    try{
     const result = await prisma.users.findUnique({
         where: {
-            id: id
+            id:  String(req.user)
         }
     })
     if (!result) {
@@ -89,18 +79,17 @@ router.get('/users/:id', authMiddleware,  async (req: Request, res: Response) =>
     } else {
         res.status(200).json({data: result})
     }
+    } catch (error) {
+        res.status(500).json({error: 'Failed to get user', details: error})
+    }
 })
 
 //update user by id
-router.put('/users/:id', async (req: Request, res: Response) => {
-    if (!req.params.id) {
-        res.status(400).json({error: 'User ID is required'})
-        return
-    }
-        const { id } = req.params as { id: string }
-        const body = req.body
+router.put('/users/:id', authMiddleware,  async (req: extRequest, res: Response) => {
+    const body = req.body
+    try{
         const result = await prisma.users.update({
-            where: {id: id},
+            where: {id: req.user},
             data: {
                 name: body.name,
                 email: body.email,
@@ -110,37 +99,30 @@ router.put('/users/:id', async (req: Request, res: Response) => {
                 password: await bcrypt.hash(body.password, 10),
             }
         })
-    
-        if (!result) {
-            res.status(500).json({error: 'Failed to update user'})
-        } else {
-            res.status(200).json({message: 'User updated successfully', data: result})
-        }
-    })
+        return res.status(200).json({message: 'User updated successfully', data: result})
+    } catch (error) {
+        return res.status(500).json({error: 'Failed to update user', details: error})
+    }
+})
 
 //soft delete user by id
-router.delete('/users/:id', async (req: Request, res: Response) => {
-    if (!req.params.id) {
-        res.status(400).json({error: 'User ID is required'})
-        return
-    }
+router.delete('/users/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params as {id: string}
-    const result = await prisma.users.update({
-        where: { id: id },
-        data: {
-            is_deleted: true
-        }
-    })
-
-    if (!result) {
-        res.status(500).json({error: 'Failed to delete user'})
-    } else {
-        res.status(200).json({message: 'User deleted successfully', data: result})
+    try{
+        const result = await prisma.users.update({
+            where: { id: id },
+            data: {
+                is_deleted: true
+            }
+        })
+        return res.status(200).json({message: 'User deleted successfully'})
+    } catch (error){
+        return res.status(500).json({error: 'Failed to delete user'})
     }
 })
 
 //logout
-router.post('/users/logout', async (req: Request, res: Response) => {
+router.post('/users/logout', authMiddleware, async (req: Request, res: Response) => {
     res.clearCookie('jwt')
     res.status(200).json({message: 'Logout successful'})
 })

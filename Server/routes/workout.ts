@@ -8,17 +8,22 @@ import type { extRequest } from '../../definitions.ts';
 const router = Router();
 
 //get workout by id
-router.get('/workout/:id', async(req: Request, res: Response) => {
+router.get('/workout/:id', authMiddleware, async(req: extRequest, res: Response) => {
     const { id } = req.params
-    const result = await prisma.workout.findFirst({
+    try{
+    const result = await prisma.workout.findUnique({
         where: {
-            id: String(id)
+            id: String(id),
+            user_id: String(req.user)
         }
     })
     if (!result) {
         res.status(404).json({error: 'Workout not found'})
     } else {
         res.status(200).json({message: 'Workout found', data: result})
+    }
+    } catch (error) {
+        res.status(500).json({error: 'Failed to get workout', details: error})
     }
 })
 
