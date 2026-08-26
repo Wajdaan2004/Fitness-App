@@ -67,7 +67,7 @@ router.post('/users/register', async (req : Request, res : Response) => {
 })
 
 //get user by id
-router.get('/users/:id', authMiddleware,  async (req: extRequest, res: Response) => {
+router.get('/users/me', authMiddleware,  async (req: extRequest, res: Response) => {
     try{
     const result = await prisma.users.findUnique({
         where: {
@@ -85,7 +85,7 @@ router.get('/users/:id', authMiddleware,  async (req: extRequest, res: Response)
 })
 
 //update user by id
-router.put('/users/:id', authMiddleware,  async (req: extRequest, res: Response) => {
+router.put('/users/me', authMiddleware,  async (req: extRequest, res: Response) => {
     const body = req.body
     try{
         const result = await prisma.users.update({
@@ -106,11 +106,10 @@ router.put('/users/:id', authMiddleware,  async (req: extRequest, res: Response)
 })
 
 //soft delete user by id
-router.delete('/users/:id', authMiddleware, async (req: Request, res: Response) => {
-    const { id } = req.params as {id: string}
+router.delete('/users/me', authMiddleware, async (req: extRequest, res: Response) => {
     try{
-        const result = await prisma.users.update({
-            where: { id: id },
+        await prisma.users.update({
+            where: { id: req.user },
             data: {
                 is_deleted: true
             }
