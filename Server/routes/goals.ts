@@ -20,6 +20,7 @@ router.post('/goals', authMiddleware, async (req: extRequest, res: Response) => 
             date: new Date()
         }
     })
+    return res.status(201).json({message: 'Goals created', data: result})
 } catch (error) {
     console.error(error)
     res.status(500).json({error: 'Failed to create goals'})
@@ -27,7 +28,9 @@ router.post('/goals', authMiddleware, async (req: extRequest, res: Response) => 
 }
 })
 //get goals by user id
-router.get('/goals/:userId',authMiddleware, async (req: extRequest, res: Response) => {    const {userId, date} = req.params;
+router.get('/goals/:userId',authMiddleware, async (req: extRequest, res: Response) => { 
+    try{
+        const {userId, date} = req.params;
     const result = await prisma.goals.findFirst({
         where: {
             user_id: String(req.user),
@@ -36,12 +39,12 @@ router.get('/goals/:userId',authMiddleware, async (req: extRequest, res: Respons
             date: 'desc'
         }
     })
-    if (!result) {
-        res.status(404).json({error: 'Goals not found'})
-        } else {
-            res.status(200).json({message: 'Goals found', data: result})
-        }
-    })
+} catch (error) {
+    console.error(error)
+    res.status(500).json({error: 'Failed to get goals', details: error})
+    return
+}
+})
 
 
 
