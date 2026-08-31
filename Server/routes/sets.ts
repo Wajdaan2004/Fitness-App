@@ -19,7 +19,8 @@ router.post('/sets',authMiddleware, async(req: Request, res: Response) => {
     })
     return res.status(201).json({message: 'Set created', data: result})
     } catch (error) {
-    return res.status(500).json({error: 'Internal server error'})
+        console.error(error)
+        return res.status(500).json({error: 'Internal server error'})
 }
 })
 
@@ -34,6 +35,7 @@ router.get('/sets/:id',authMiddleware, async(req: Request, res: Response) => {
     })
     return res.status(200).json({message: 'Set found', data: result})
     } catch (error) {
+        console.error(error)
         return res.status(500).json({error: 'Internal server error'})
     }
 })
@@ -56,6 +58,7 @@ router.put('/sets/:id',authMiddleware, async(req: Request, res: Response) => {
     })
     return res.status(200).json({message: 'Set updated', data: result})
     } catch (error) {
+        console.error(error)
         return res.status(500).json({error: 'Internal server error'})
     }
 })
@@ -71,6 +74,7 @@ router.delete('/sets/:id',authMiddleware, async(req: Request, res: Response) => 
         })
         return res.status(200).json({message: 'Set deleted'})
     } catch (error) {
+        console.error(error)
         return res.status(500).json({error: 'Internal server error'})
     }
 })

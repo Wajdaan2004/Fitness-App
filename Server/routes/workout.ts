@@ -17,19 +17,15 @@ router.get('/workout/:id', authMiddleware, async(req: extRequest, res: Response)
             user_id: String(req.user)
         }
     })
-    if (!result) {
-        res.status(404).json({error: 'Workout not found'})
-    } else {
-        res.status(200).json({message: 'Workout found', data: result})
-    }
     } catch (error) {
+        console.error(error)   
         res.status(500).json({error: 'Failed to get workout', details: error})
     }
 })
 
 //create workout
 router.post('/workout', authMiddleware, async(req: extRequest, res: Response) => {
-    const {user_id, date} = req.body
+    const {date} = req.body
     try{
     const result = await prisma.workout.create({
         data: {
@@ -39,6 +35,7 @@ router.post('/workout', authMiddleware, async(req: extRequest, res: Response) =>
     })
     return res.status(201).json({message: 'Workout created', data: result})
     } catch (error) {
+        console.error(error)
         return res.status(500).json({error: 'Failed to create workout', details: error})
     }
 })
@@ -55,6 +52,7 @@ router.delete('/workout/:id', authMiddleware, async(req: extRequest, res: Respon
     })
     return res.status(200).json({message: 'Workout deleted', data: result})
     } catch (error) {
+        console.error(error)
         return res.status(500).json({error: 'Failed to delete workout', details: error})
     }
 })

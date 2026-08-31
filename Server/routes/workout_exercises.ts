@@ -7,6 +7,7 @@ const router = Router();
 //create workout exercise
 router.post('/workout-exercise', async(req: Request, res: Response) => {
     const { workout_id, exercise_id, sets, reps, weight } = req.body
+    try{
     const result = await prisma.workout_exercises.create({
         data: {
             workout_id: String(workout_id),
@@ -23,26 +24,29 @@ router.post('/workout-exercise', async(req: Request, res: Response) => {
             sets: true
         }
     })
-    if (!result) {
-        res.status(500).json({error: 'Failed to create workout exercise'})
-    } else {
-        res.status(201).json({message: 'Workout exercise created', data: result})
-    }
+    return res.status(201).json({message: 'Workout exercise created', data: result})
+} catch (error) {
+    console.error(error)
+    res.status(500).json({error: 'Failed to create workout exercise', details: error})
+    return
+}
 })
 
 //get workout exercise by id
 router.get('/workout-exercise/:id', async(req: Request, res: Response) => {
     const { id } = req.params
+    try{
     const result = await prisma.workout_exercises.findFirst({
         where: {
             id: String(id)
         }
     })
-    if (!result) {
-        res.status(404).json({error: 'Workout exercise not found'})
-    } else {
-        res.status(200).json({message: 'Workout exercise found', data: result})
-    }
+    return res.status(200).json({message: 'Workout exercise found', data: result})
+} catch (error) {
+    console.error(error)
+    res.status(500).json({error: 'Failed to get workout exercise', details: error})
+    return
+}
 })
 
 
