@@ -28,9 +28,8 @@ router.post('/goals', authMiddleware, async (req: extRequest, res: Response) => 
 }
 })
 //get goals by user id
-router.get('/goals/:userId',authMiddleware, async (req: extRequest, res: Response) => { 
+router.get('/goals/',authMiddleware, async (req: extRequest, res: Response) => { 
     try{
-        const {userId, date} = req.params;
     const result = await prisma.goals.findFirst({
         where: {
             user_id: String(req.user),
@@ -39,6 +38,7 @@ router.get('/goals/:userId',authMiddleware, async (req: extRequest, res: Respons
             date: 'desc'
         }
     })
+    return res.status(200).json({message: 'Goals found', data: result})
 } catch (error) {
     console.error(error)
     res.status(500).json({error: 'Failed to get goals', details: error})
