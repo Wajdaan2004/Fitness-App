@@ -1,12 +1,14 @@
 import Router, { type Request, type Response} from 'express'
 import { prisma } from '../lib/prisma.ts';
 import { Prisma } from '@prisma/client';
+import { authMiddleware } from '../middlewares/authMiddleware.ts';
 
 const router = Router();
 
 //create set
-router.post('/sets', async(req: Request, res: Response) => {
+router.post('/sets',authMiddleware, async(req: Request, res: Response) => {
     const { workout_exercise_id, set_number, reps, weight } = req.body
+    try{
     const result = await prisma.sets.create({
         data: {
             workout_exercise_id: String(workout_exercise_id),
@@ -15,62 +17,61 @@ router.post('/sets', async(req: Request, res: Response) => {
             weight: new Prisma.Decimal(weight)
         }
     })
-    if (!result) {
-        res.status(500).json({error: 'Failed to create set'})
-    } else {
-        res.status(201).json({message: 'Set created', data: result})
-    }
+    return res.status(201).json({message: 'Set created', data: result})
+    } catch (error) {
+    return res.status(500).json({error: 'Internal server error'})
+}
 })
 
 //get set by id
-router.get('/sets/:id', async(req: Request, res: Response) => {
+router.get('/sets/:id',authMiddleware, async(req: Request, res: Response) => {
     const { id } = req.params
+    try{
     const result = await prisma.sets.findFirst({
         where: {
             id: String(id)
         }
     })
-    if (!result) {
-        res.status(404).json({error: 'Set not found'})
-    } else {
-        res.status(200).json({message: 'Set found', data: result})
+    return res.status(200).json({message: 'Set found', data: result})
+    } catch (error) {
+        return res.status(500).json({error: 'Internal server error'})
     }
 })
 
 //update set by id
-router.put('/sets/:id', async(req: Request, res: Response) => {
+router.put('/sets/:id',authMiddleware, async(req: Request, res: Response) => {
     const { id } = req.params
     const { workout_exercise_id, set_number, reps, weight } = req.body
-    const result = await prisma.sets.update({
-        where: {
-            id: String(id)
-        },
-        data: {
+    try {
+        const result = await prisma.sets.update({
+            where: {
+                id: String(id)
+            },
+            data: {
             workout_exercise_id: String(workout_exercise_id),
             set_number: Number(set_number),
             reps: Number(reps),
             weight: new Prisma.Decimal(weight)
         }
     })
-    if (!result) {
-        res.status(404).json({error: 'Set not found'})
-    } else {
-        res.status(200).json({message: 'Set updated', data: result})
+    return res.status(200).json({message: 'Set updated', data: result})
+    } catch (error) {
+        return res.status(500).json({error: 'Internal server error'})
     }
 })
 
 //delete set by id
-router.delete('/sets/:id', async(req: Request, res: Response) => {
+router.delete('/sets/:id',authMiddleware, async(req: Request, res: Response) => {
     const { id } = req.params
-    const result = await prisma.sets.delete({
-        where: {
-            id: String(id)
-        }
-    })
-    if (!result) {
-        res.status(404).json({error: 'Set not found'})
-    } else {
-        res.status(200).json({message: 'Set deleted', data: result})
+    try {
+        await prisma.sets.delete({
+            where: {
+                id: String(id)
+            }
+        })
+        return res.status(200).json({message: 'Set deleted'})
+    } catch (error) {
+        return res.status(500).json({error: 'Internal server error'})
     }
 })
 
